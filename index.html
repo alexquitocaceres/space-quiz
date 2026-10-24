@@ -380,10 +380,10 @@
     <div id="quiz-view">
       <section class="progress-wrap" aria-label="Progreso del cuestionario">
         <div class="progress-meta">
-          <span id="question-count">Pregunta 1 de 10</span>
+          <span id="question-count">Pregunta 1</span>
           <span id="progress-percent">10 %</span>
         </div>
-        <div class="progress-track" role="progressbar" aria-label="Progreso" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" id="progress-bar">
+        <div class="progress-track" role="progressbar" aria-label="Progreso" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="progress-bar">
           <div class="progress-fill" id="progress-fill"></div>
         </div>
       </section>
@@ -405,7 +405,7 @@
       <p class="eyebrow">Misión completada</p>
       <h1 id="result-title">¡Buen viaje!</h1>
       <p class="subtitle" id="result-message"></p>
-      <div class="result-score"><strong id="final-score">0</strong><span>de 10 respuestas correctas</span></div>
+      <div class="result-score"><strong id="final-score">0</strong><span>de <span id="question-total"></span> respuestas correctas</span></div>
       <button class="next-button" id="restart-button" type="button">Volver a jugar <span aria-hidden="true">↻</span></button>
     </section>
   </main>
@@ -488,12 +488,23 @@
     let currentQuestion = 0;
     let score = 0;
     let answered = false;
+    let questionOrder = [];
+
+    function createQuestionOrder() {
+      const order = questions.map((_, index) => index);
+      for (let index = order.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [order[index], order[randomIndex]] = [order[randomIndex], order[index]];
+      }
+      return order;
+    }
 
     function renderQuestion() {
-      const item = questions[currentQuestion];
+      const item = questions[questionOrder[currentQuestion]];
       answered = false;
       questionNode.textContent = item.question;
       questionCount.textContent = `Pregunta ${currentQuestion + 1} de ${questions.length}`;
+      progressBar.setAttribute("aria-valuemax", String(questions.length));
       progressPercent.textContent = `${Math.round(((currentQuestion + 1) / questions.length) * 100)} %`;
       progressFill.style.width = `${(currentQuestion / questions.length) * 100}%`;
       progressBar.setAttribute("aria-valuenow", String(currentQuestion));
@@ -516,7 +527,7 @@
     function selectAnswer(selectedIndex) {
       if (answered) return;
       answered = true;
-      const item = questions[currentQuestion];
+      const item = questions[questionOrder[currentQuestion]];
       const buttons = [...answersNode.querySelectorAll(".answer")];
       buttons.forEach(button => { button.disabled = true; });
 
@@ -548,6 +559,7 @@
       quizView.hidden = true;
       resultView.hidden = false;
       document.getElementById("final-score").textContent = String(score);
+      document.getElementById("question-total").textContent = String(questions.length);
       let emoji;
       let title;
       let message;
@@ -584,6 +596,7 @@
     document.getElementById("restart-button").addEventListener("click", () => {
       currentQuestion = 0;
       score = 0;
+      questionOrder = createQuestionOrder();
       scoreNode.textContent = "0";
       resultView.hidden = true;
       quizView.hidden = false;
@@ -591,6 +604,7 @@
       answersNode.querySelector("button").focus({ preventScroll: true });
     });
 
+    questionOrder = createQuestionOrder();
     renderQuestion();
   </script>
 </body>
